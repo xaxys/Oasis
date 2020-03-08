@@ -9,8 +9,27 @@ import (
 // Default Configs
 
 func initServerConfig() {
-	initConfig(&ServerConfig, ServerConfigName, "yml", ".", serverConfigDefault)
-	initConfig(&PluginManagerConfig, PluginManagerConfigName, "yml", ".", pluginManagerConfigDefault)
+	err, updated := initConfig(&ServerConfig, ServerConfigName, "yml", ".", serverConfigDefault)
+	if updated {
+		getLogger().Infof("Found config %s in an old version. Update to latest version.", ServerConfigName)
+	}
+	if err != nil {
+		getLogger().Warn(err)
+		getLogger().Infof("Config %s initialized unsuccessfully", ServerConfigName)
+	} else {
+		getLogger().Infof("Config %s initialized successfully", ServerConfigName)
+	}
+
+	err, updated = initConfig(&PluginManagerConfig, PluginManagerConfigName, "yml", ".", pluginManagerConfigDefault)
+	if updated {
+		getLogger().Infof("Found config %s in an old version. Update to latest version.", PluginManagerConfigName)
+	}
+	if err != nil {
+		getLogger().Warn(err)
+		getLogger().Infof("Config %s initialized unsuccessfully", PluginManagerConfigName)
+	} else {
+		getLogger().Infof("Config %s initialized successfully", PluginManagerConfigName)
+	}
 }
 
 const ServerConfigName = "server"

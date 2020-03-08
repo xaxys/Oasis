@@ -28,15 +28,26 @@ func (c *oasisConfiguration) SubConfig(key string) Configuration {
 
 func NewConfig(file string, defaultFields ...map[string]interface{}) Configuration {
 	var c Configuration
-	InitConfig(&c, file, defaultFields...)
+	err, updated := InitConfig(&c, file, defaultFields...)
+	if updated {
+		getLogger().Infof("Found config %s in an old version. Update to latest version.", file)
+	}
+	if err != nil {
+		getLogger().Warn(err)
+		getLogger().Infof("Config %s initialized unsuccessfully", file)
+	} else {
+		getLogger().Infof("Config %s initialized successfully", file)
+	}
 	return c
 }
 
-func InitConfig(config *Configuration, name string, defaultFields ...map[string]interface{}) {
-	initConfig(config, name, ServerConfig.GetString("ConfigType"), ConfigPath, defaultFields...)
+func InitConfig(config *Configuration, name string, defaultFields ...map[string]interface{}) (Err error, updated bool) {
+	Err, updated = initConfig(config, name, ServerConfig.GetString("ConfigType"), ConfigPath, defaultFields...)
+	return Err, updated
 }
 
-func initConfig(config *Configuration, name string, configType string, configPath string, defaultFields ...map[string]interface{}) {
+func initConfig(config *Configuration, name string, configType string, configPath string, defaultFields ...map[string]interface{}) (Err error, updated bool) {
+
 	v := viper.New()
 	*config = &oasisConfiguration{v}
 
@@ -55,28 +66,27 @@ func initConfig(config *Configuration, name string, configType string, configPat
 	CheckFolder(ConfigPath)
 	if err := v.SafeWriteConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileAlreadyExistsError); !ok {
-			getLogger().Warn(err)
+			Err = fmt.Errorf("%v; %v", err, Err)
 		}
 	}
 	if err := v.ReadInConfig(); err != nil {
-		getLogger().Warn(err)
+		Err = fmt.Errorf("%v; %v", err, Err)
 	}
 
 	// Check config version and Update config if has field "Version"
 	if version != "" && v.GetString("Version") < version {
-		getLogger().Infof("Found config %s in an old version. Update to lasted version.", name)
+		updated = true
 		v.Set("Version", version)
 		if err := v.WriteConfig(); err != nil {
-			getLogger().Warn(err)
+			Err = fmt.Errorf("%v; %v", err, Err)
 		}
 	}
-
-	if ServerConfig.GetBool("NotifyConfigChange") {
-		v.WatchConfig()
-		v.OnConfigChange(func(e fsnotify.Event) {
+	v.WatchConfig()
+	v.OnConfigChange(func(e fsnotify.Event) {
+		if ServerConfig.GetBool("NotifyConfigChange") {
 			getLogger().Infof("Config file changed: %s", e.Name)
-		})
-	}
+		}
+	})
 
-	getLogger().Infof("Config %s initialized successfully", name)
+	return Err, updated
 }
