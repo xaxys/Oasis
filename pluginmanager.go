@@ -255,7 +255,8 @@ func (pm *oasisPluginManager) LoadPlugin(names ...string) {
 }
 
 func (pm *oasisPluginManager) LoadPlugins() {
-	folder, err := ioutil.ReadDir(ServerConfig.GetString("PluginPath"))
+	path := CheckFolder(ServerConfig.GetString("PluginPath"))
+	folder, err := ioutil.ReadDir(path)
 	if err != nil {
 		getLogger().Warnf("Fail to access to PluginPath. Details: %v", err)
 		return
