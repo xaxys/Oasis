@@ -37,7 +37,7 @@ func newConsolePrinter() *oasisConsolePrinter {
 	p := &oasisConsolePrinter{
 		bytePool: sync.Pool{
 			New: func() interface{} {
-				b := make([]byte, BytePoolSize)
+				b := make([]byte, 0, BytePoolSize)
 				return &b
 			},
 		},
@@ -57,7 +57,7 @@ func (p *oasisConsolePrinter) startPrinter() {
 				break
 			}
 			s := string(b)
-			b = b[0:0]
+			b = b[0:0:BytePoolSize]
 			p.bytePool.Put(&b)
 
 			formatterLock.Lock()
