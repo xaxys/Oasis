@@ -2,6 +2,10 @@
 
 Oasis is a go plugin server which provides basic plugin operation. You can easily create a plugin with its API and register it to the server  to avoid write config operation or timely task operation etc.
 
+# Plugins
+
+You can find some useful plugin in this repository https://github.com/xaxys/Oasis_Plugins
+
 # Update
 
 * 2020/03/07 Initialized the repositories and released v 0.1.0
@@ -56,10 +60,14 @@ func (p *WhateverPlugin) OnLoad() bool {
 	return true
 }
 
+// Custom your OnEnable
 func (p *WhateverPlugin) OnEnable() bool {
 	return true
 }
 
+// If you don't implement your OnDisable
+// it Will use default Ondisable() in PluginBase
+// and return true directly.
 func (p *WhateverPlugin) OnDisable() bool {
 	return true
 }
