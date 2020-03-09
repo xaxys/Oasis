@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	. "github.com/spf13/viper"
@@ -12,6 +13,8 @@ const ConfigPath = "./configs"
 
 type oasisConfiguration struct {
 	*Viper
+	handles []func()
+	lock sync.Mutex
 }
 
 func (c *oasisConfiguration) SetAndWrite(key string, value interface{}) error {
@@ -31,7 +34,21 @@ func (c *oasisConfiguration) Unmarshal(rawVal interface{}) error {
 }
 
 func (c *oasisConfiguration) SubConfig(key string) Configuration {
-	return &oasisConfiguration{c.Sub(key)}
+	return &oasisConfiguration{
+		Viper: c.Sub(key),
+	}
+}
+
+func (c *oasisConfiguration) AddHandle(f func()) {
+	c.lock.Lock()
+	c.handles = append(c.handles, f)
+	c.lock.Unlock()
+}
+
+func (c *oasisConfiguration) RemoveAllHandle(f func()) {
+	c.lock.Lock()
+	c.handles = nil
+	c.lock.Unlock()
 }
 
 func NewConfig(file string, defaultFields ...map[string]interface{}) Configuration {
@@ -57,7 +74,10 @@ func InitConfig(config *Configuration, name string, defaultFields ...map[string]
 func initConfig(config *Configuration, name string, configType string, configPath string, defaultFields ...map[string]interface{}) (Err error, updated bool) {
 
 	v := New()
-	*config = &oasisConfiguration{v}
+	conf := &oasisConfiguration{
+		Viper: v,
+	}
+	*config = conf
 
 	v.SetConfigName(name)
 	v.AddConfigPath(configPath)
@@ -93,6 +113,9 @@ func initConfig(config *Configuration, name string, configType string, configPat
 	v.OnConfigChange(func(e fsnotify.Event) {
 		if ServerConfig.GetBool("NotifyConfigChange") {
 			getLogger().Infof("Config file changed: %s", e.Name)
+			for _, v := range conf.handles {
+				v()
+			}
 		}
 	})
 

@@ -169,6 +169,8 @@ type Configuration interface {
 	SafeWriteConfig() error
 	Unmarshal(interface{}) error
 	UnmarshalKey(string, interface{}) error
+	AddHandle(func())
+	RemoveAllHandle(func())
 }
 
 type PluginDescription struct {
