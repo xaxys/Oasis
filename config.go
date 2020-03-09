@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/viper"
+	. "github.com/spf13/viper"
 	. "github.com/xaxys/oasis/api"
 )
 
 const ConfigPath = "./configs"
 
 type oasisConfiguration struct {
-	*viper.Viper
+	*Viper
 }
 
 func (c *oasisConfiguration) SetAndWrite(key string, value interface{}) error {
@@ -20,6 +20,14 @@ func (c *oasisConfiguration) SetAndWrite(key string, value interface{}) error {
 		return fmt.Errorf("write config Failed.")
 	}
 	return nil
+}
+
+func (c *oasisConfiguration) UnmarshalKey(key string, rawVal interface{}) error {
+	return c.Viper.UnmarshalKey(key, rawVal)
+}
+
+func (c *oasisConfiguration) Unmarshal(rawVal interface{}) error {
+	return c.Viper.Unmarshal(rawVal)
 }
 
 func (c *oasisConfiguration) SubConfig(key string) Configuration {
@@ -48,7 +56,7 @@ func InitConfig(config *Configuration, name string, defaultFields ...map[string]
 
 func initConfig(config *Configuration, name string, configType string, configPath string, defaultFields ...map[string]interface{}) (Err error, updated bool) {
 
-	v := viper.New()
+	v := New()
 	*config = &oasisConfiguration{v}
 
 	v.SetConfigName(name)
@@ -65,7 +73,7 @@ func initConfig(config *Configuration, name string, configType string, configPat
 	// Create default config file
 	CheckFolder(ConfigPath)
 	if err := v.SafeWriteConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileAlreadyExistsError); !ok {
+		if _, ok := err.(ConfigFileAlreadyExistsError); !ok {
 			Err = fmt.Errorf("%v; %v", err, Err)
 		}
 	}

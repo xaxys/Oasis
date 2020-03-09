@@ -167,6 +167,8 @@ type Configuration interface {
 	MergeConfigMap(cfg map[string]interface{}) error
 	WriteConfig() error
 	SafeWriteConfig() error
+	Unmarshal(interface{}) error
+	UnmarshalKey(string, interface{}) error
 }
 
 type PluginDescription struct {
