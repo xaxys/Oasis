@@ -41,6 +41,7 @@ func newCommandManager() *oasisCommandManager {
 }
 
 func (cm *oasisCommandManager) ExcuteCommand(caller CommandCaller, sentence string) bool {
+	sentence = strings.TrimLeft(sentence, " ")
 	if sentence == "" {
 		return false
 	}
